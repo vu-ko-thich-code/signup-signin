@@ -3,6 +3,7 @@ import Session from "../models/Session.js";
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
+import clearCookie from 'cookie-parser'
 
 const ACCESS_TOKEN_TTL = '30m'; // normally <= 15m
 const REFRESH_TOKEN_TTL = 14 * 24 * 60 * 60 * 1000; // 14 days
@@ -98,6 +99,26 @@ export async function signIn(req, res) {
     }
     catch (error) {
         console.error("Error in signIn", error);
+        res.status(500).json({message: "Internal server error"});
+    }
+}
+
+export async function signOut(req, res) {
+    try {
+        // get refresh token from cookie
+        const token = req.cookies?.refreshToken;
+
+        if (token) {
+            // delete refresh token in Session
+            await Session.deleteOne({refreshToken: token});
+
+            // delete cookie
+            res.clearCookie("refreshToken");
+        }
+        return res.sendStatus(204);
+    }
+    catch (error) {
+        console.error("Error in signOut", error);
         res.status(500).json({message: "Internal server error"});
     }
 }
